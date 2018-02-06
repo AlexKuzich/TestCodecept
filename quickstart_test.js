@@ -2,6 +2,7 @@ var fs = require('fs');
 var readline = require('readline');
 var google = require('googleapis');
 var googleAuth = require('google-auth-library');
+var gmail = google.gmail('v1');
 
 // If modifying these scopes, delete your previously saved credentials
 // at ~/.credentials/gmail-nodejs-quickstart.json
@@ -126,7 +127,6 @@ function listLabels(auth) {
 }
 
 function listMessages(auth) {
-    var gmail = google.gmail('v1');
     gmail.users.messages.list({
         auth: auth,
         userId: 'me'
@@ -148,8 +148,7 @@ function listMessages(auth) {
     });
 }
 
-function getTitle(auth){
-    var gmail = google.gmail('v1');
+function getTime(auth){
     var request = gmail.users.messages.get({
         auth: auth,
         userId: 'me',
@@ -163,3 +162,17 @@ function getTitle(auth){
         console.log(new Date(parseInt(internalDate)));
     });
 }
+
+Feature('Mailing');
+
+Scenario.only('Check if the messages are received once a 9 hours', (I) => {
+    fs.readFile('client_secret.json', function processClientSecrets(err, content) {
+    if (err) {
+        console.log('Error loading client secret file: ' + err);
+        return;
+    }
+    // Authorize a client with the loaded credentials, then call the
+    // Gmail API.
+    authorize(JSON.parse(content), listMessages);
+    authorize(JSON.parse(content), getTitle);
+});
