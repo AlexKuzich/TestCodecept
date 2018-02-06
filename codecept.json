@@ -1,0 +1,23 @@
+{
+  "tests": "./*_test.js",
+  "timeout": 10000,
+  "output": "./output",
+  "helpers": {
+    "Protractor": {
+      "url": "https://projects.arago.co",
+      "driver": "hosted",
+      "browser": "chrome",
+      "rootElement": "body",
+      "dependencies":
+      {
+        "webdriver-manager": "12.0.6"
+      }
+    }
+  },
+  "include": {
+    "I": "./steps_file.js"
+  },
+  "bootstrap": false,
+  "mocha": {},
+  "name": "Codeceptjs"
+}
