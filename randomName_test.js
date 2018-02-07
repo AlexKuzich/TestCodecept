@@ -1,7 +1,7 @@
 Feature('Mailing Service');
 
-Scenario('Send email', (I) => {
-    I.amOnPage('https://id.arago.co/');
+Scenario('Check if mails are sent once 9 hours', (I) => {
+
 });
 
 

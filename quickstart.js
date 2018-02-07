@@ -19,7 +19,6 @@ fs.readFile('client_secret.json', function processClientSecrets(err, content) {
     // Authorize a client with the loaded credentials, then call the
     // Gmail API.
     authorize(JSON.parse(content), listMessages);
-    authorize(JSON.parse(content), getTitle);
 });
 
 /**
@@ -129,8 +128,8 @@ function listMessages(auth) {
     var gmail = google.gmail('v1');
     gmail.users.messages.list({
         auth: auth,
-        userId: 'me'
-    }, function(err, response) {
+        userId: 'me'}, {qs: { q: 'subject: relationship survey invitation'}} // bug in google API, see https://github.com/google/google-api-nodejs-client/issues/469
+    , function(err, response) {
         if (err) {
             console.log('The API returned an error: ' + err);
             return;
@@ -139,21 +138,23 @@ function listMessages(auth) {
         if (messages.length == 0) {
             console.log('No labels found.');
         } else {
-            console.log('Messages:');
+            console.log(messages.length);
+            /*console.log('Messages:');
             for (var i = 0; i < messages.length; i++) {
                 var message = messages[i];
                 console.log('- %s', message.id);
-            }
+            }*/
+            getDate(auth, messages[0].id)
         }
     });
 }
 
-function getTitle(auth){
+function getDate(auth, messageId){
     var gmail = google.gmail('v1');
     var request = gmail.users.messages.get({
         auth: auth,
         userId: 'me',
-        id: '1616b8d9d22de9e2'
+        id: messageId
     }, function (err, response){
         if (err) {
             console.log('The API returned an error: ' + err);
