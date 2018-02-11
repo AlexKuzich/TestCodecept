@@ -1,15 +1,18 @@
-var fs = require('fs');
-var readline = require('readline');
-var google = require('googleapis');
-var googleAuth = require('google-auth-library');
-var gmail = google.gmail('v1');
+const fs = require('fs');
+const readline = require('readline');
+const google = require('googleapis');
+const googleAuth = require('google-auth-library');
 
 // If modifying these scopes, delete your previously saved credentials
 // at ~/.credentials/gmail-nodejs-quickstart.json
-var SCOPES = ['https://www.googleapis.com/auth/gmail.readonly'];
-var TOKEN_DIR = (process.env.HOME || process.env.HOMEPATH ||
+const SCOPES = ['https://www.googleapis.com/auth/gmail.readonly'];
+const TOKEN_DIR = (process.env.HOME || process.env.HOMEPATH ||
     process.env.USERPROFILE) + '/.credentials/';
-var TOKEN_PATH = TOKEN_DIR + 'gmail-nodejs-quickstart.json';
+const TOKEN_PATH = TOKEN_DIR + 'gmail-nodejs-quickstart.json';
+
+module.exports = {
+    listMessages
+};
 
 // Load client secrets from a local file.
 fs.readFile('client_secret.json', function processClientSecrets(err, content) {
@@ -20,7 +23,6 @@ fs.readFile('client_secret.json', function processClientSecrets(err, content) {
     // Authorize a client with the loaded credentials, then call the
     // Gmail API.
     authorize(JSON.parse(content), listMessages);
-    authorize(JSON.parse(content), getTitle);
 });
 
 /**
@@ -31,11 +33,11 @@ fs.readFile('client_secret.json', function processClientSecrets(err, content) {
  * @param {function} callback The callback to call with the authorized client.
  */
 function authorize(credentials, callback) {
-    var clientSecret = credentials.installed.client_secret;
-    var clientId = credentials.installed.client_id;
-    var redirectUrl = credentials.installed.redirect_uris[0];
-    var auth = new googleAuth();
-    var oauth2Client = new auth.OAuth2(clientId, clientSecret, redirectUrl);
+    let clientSecret = credentials.installed.client_secret;
+    let clientId = credentials.installed.client_id;
+    let redirectUrl = credentials.installed.redirect_uris[0];
+    let auth = new googleAuth();
+    let oauth2Client = new auth.OAuth2(clientId, clientSecret, redirectUrl);
 
     // Check if we have previously stored a token.
     fs.readFile(TOKEN_PATH, function(err, token) {
@@ -57,12 +59,12 @@ function authorize(credentials, callback) {
  *     client.
  */
 function getNewToken(oauth2Client, callback) {
-    var authUrl = oauth2Client.generateAuthUrl({
+    let authUrl = oauth2Client.generateAuthUrl({
         access_type: 'offline',
         scope: SCOPES
     });
     console.log('Authorize this app by visiting this url: ', authUrl);
-    var rl = readline.createInterface({
+    let rl = readline.createInterface({
         input: process.stdin,
         output: process.stdout
     });
@@ -89,7 +91,7 @@ function storeToken(token) {
     try {
         fs.mkdirSync(TOKEN_DIR);
     } catch (err) {
-        if (err.code != 'EEXIST') {
+        if (err.code !== 'EEXIST') {
             throw err;
         }
     }
@@ -103,76 +105,39 @@ function storeToken(token) {
  * @param {google.auth.OAuth2} auth An authorized OAuth2 client.
  */
 
-function listLabels(auth) {
-    var gmail = google.gmail('v1');
-    gmail.users.labels.list({
-        auth: auth,
-        userId: 'me',
-    }, function(err, response) {
-        if (err) {
-            console.log('The API returned an error: ' + err);
-            return;
-        }
-        var labels = response.labels;
-        if (labels.length == 0) {
-            console.log('No labels found.');
-        } else {
-            console.log('Labels:');
-            for (var i = 0; i < labels.length; i++) {
-                var label = labels[i];
-                console.log('- %s', label.name);
-            }
-        }
-    });
-}
-
 function listMessages(auth) {
+    let gmail = google.gmail('v1');
     gmail.users.messages.list({
         auth: auth,
-        userId: 'me'
-    }, function(err, response) {
+        userId: 'akuzich@klika-tech.com'}, {qs: { q: 'subject: relationship survey invitation'}} // bug in google API, see https://github.com/google/google-api-nodejs-client/issues/469
+    , function(err, response) {
         if (err) {
             console.log('The API returned an error: ' + err);
             return;
         }
-        var messages = response.messages;
-        if (messages.length == 0) {
+        let messages = response.messages;
+        if (messages.length === 0) {
             console.log('No labels found.');
         } else {
-            console.log('Messages:');
-            for (var i = 0; i < messages.length; i++) {
-                var message = messages[i];
-                console.log('- %s', message.id);
-            }
+            console.log(messages.length);
+            getDate(auth, messages[0].id)
         }
     });
 }
 
-function getTime(auth){
-    var request = gmail.users.messages.get({
+function getDate(auth, messageId){
+    let gmail = google.gmail('v1');
+    let request = gmail.users.messages.get({
         auth: auth,
-        userId: 'me',
-        id: '1616b8d9d22de9e2'
-    }, function (err, response){
+        userId: 'akuzich@klika-tech.com',
+        id: messageId
+    }, function (err, response) {
         if (err) {
             console.log('The API returned an error: ' + err);
             return;
         }
-        var internalDate = response.internalDate;
+        let internalDate = response.internalDate;
         console.log(new Date(parseInt(internalDate)));
     });
 }
 
-Feature('Mailing');
-
-Scenario.only('Check if the messages are received once a 9 hours', (I) => {
-    fs.readFile('client_secret.json', function processClientSecrets(err, content) {
-    if (err) {
-        console.log('Error loading client secret file: ' + err);
-        return;
-    }
-    // Authorize a client with the loaded credentials, then call the
-    // Gmail API.
-    authorize(JSON.parse(content), listMessages);
-    authorize(JSON.parse(content), getTitle);
-});
