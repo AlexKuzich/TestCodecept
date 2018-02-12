@@ -109,7 +109,7 @@ function listMessages(auth) {
     let gmail = google.gmail('v1');
     gmail.users.messages.list({
         auth: auth,
-        userId: 'akuzich@klika-tech.com'}, {qs: { q: 'subject: relationship survey invitation'}} // bug in google API, see https://github.com/google/google-api-nodejs-client/issues/469
+        userId: 'akuzich@klika-tech.com'}, {params: { q: 'subject: relationship survey invitation'}} // bug in google API, see https://github.com/google/google-api-nodejs-client/issues/469
     , function(err, response) {
         if (err) {
             console.log('The API returned an error: ' + err);
@@ -120,7 +120,7 @@ function listMessages(auth) {
             console.log('No labels found.');
         } else {
             console.log(messages.length);
-            getDate(auth, messages[0].id)
+            return getDate(auth, messages[0].id);
         }
     });
 }
@@ -136,8 +136,7 @@ function getDate(auth, messageId){
             console.log('The API returned an error: ' + err);
             return;
         }
-        let internalDate = response.internalDate;
-        console.log(new Date(parseInt(internalDate)));
+        return response.internalDate;
     });
 }
 

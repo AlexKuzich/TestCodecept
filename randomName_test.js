@@ -1,4 +1,4 @@
-let mailOperaions = require('./quickstart.js');
+let mailOperaions = require('./quickstart_test.js');
 
 Feature('Mailing Service');
 
