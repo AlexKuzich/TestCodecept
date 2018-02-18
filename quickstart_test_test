@@ -2,6 +2,8 @@ const fs = require('fs');
 const readline = require('readline');
 const google = require('googleapis');
 const googleAuth = require('google-auth-library');
+const gmail = google.gmail('v1');
+let oauth2Client;
 
 // If modifying these scopes, delete your previously saved credentials
 // at ~/.credentials/gmail-nodejs-quickstart.json
@@ -11,10 +13,9 @@ const TOKEN_DIR = (process.env.HOME || process.env.HOMEPATH ||
 const TOKEN_PATH = TOKEN_DIR + 'gmail-nodejs-quickstart.json';
 
 module.exports = {
-    listMessages
+    getDate
 };
 
-// Load client secrets from a local file.
 fs.readFile('client_secret.json', function processClientSecrets(err, content) {
     if (err) {
         console.log('Error loading client secret file: ' + err);
@@ -22,7 +23,7 @@ fs.readFile('client_secret.json', function processClientSecrets(err, content) {
     }
     // Authorize a client with the loaded credentials, then call the
     // Gmail API.
-    authorize(JSON.parse(content), listMessages);
+    authorize(JSON.parse(content));
 });
 
 /**
@@ -32,12 +33,13 @@ fs.readFile('client_secret.json', function processClientSecrets(err, content) {
  * @param {Object} credentials The authorization client credentials.
  * @param {function} callback The callback to call with the authorized client.
  */
-function authorize(credentials, callback) {
+function authorize(credentials) {
+    fs.readFile('client_secret.json');
     let clientSecret = credentials.installed.client_secret;
     let clientId = credentials.installed.client_id;
     let redirectUrl = credentials.installed.redirect_uris[0];
     let auth = new googleAuth();
-    let oauth2Client = new auth.OAuth2(clientId, clientSecret, redirectUrl);
+    oauth2Client = new auth.OAuth2(clientId, clientSecret, redirectUrl);
 
     // Check if we have previously stored a token.
     fs.readFile(TOKEN_PATH, function(err, token) {
@@ -45,7 +47,6 @@ function authorize(credentials, callback) {
             getNewToken(oauth2Client, callback);
         } else {
             oauth2Client.credentials = JSON.parse(token);
-            callback(oauth2Client);
         }
     });
 }
@@ -104,31 +105,29 @@ function storeToken(token) {
  *
  * @param {google.auth.OAuth2} auth An authorized OAuth2 client.
  */
-
-function listMessages(auth) {
-    let gmail = google.gmail('v1');
+function getDate() {
+    authorize(JSON.parse(fs.readFile('client_secret.json')));
     gmail.users.messages.list({
-        auth: auth,
-        userId: 'akuzich@klika-tech.com'}, {qs: { q: 'subject: relationship survey invitation'}} // bug in google API, see https://github.com/google/google-api-nodejs-client/issues/469
-    , function(err, response) {
-        if (err) {
-            console.log('The API returned an error: ' + err);
-            return;
-        }
-        let messages = response.messages;
-        if (messages.length === 0) {
-            console.log('No labels found.');
-        } else {
-            console.log(messages.length);
-            return getDate(auth, messages[0].id);
-        }
-    });
+            auth: oauth2Client,
+            userId: 'akuzich@klika-tech.com'}, {qs: { q: 'subject: relationship survey invitation'}} // bug in google API, see https://github.com/google/google-api-nodejs-client/issues/469
+        , function(err, response) {
+            if (err) {
+                console.log('The API returned an error: ' + err);
+                return;
+            }
+            let messages = response.messages;
+            if (messages.length === 0) {
+                console.log('No labels found.');
+            } else {
+                console.log(messages.length);
+                return getLastDate(messages[0].id);
+            }
+        });
 }
 
-function getDate(auth, messageId){
-    let gmail = google.gmail('v1');
+function getLastDate(messageId){
     let request = gmail.users.messages.get({
-        auth: auth,
+        auth: oauth2Client,
         userId: 'akuzich@klika-tech.com',
         id: messageId
     }, function (err, response) {
@@ -136,7 +135,9 @@ function getDate(auth, messageId){
             console.log('The API returned an error: ' + err);
             return;
         }
-        console.log(response.internalDate);
+        return response.internalDate;
     });
 }
+
+getDate();
 
